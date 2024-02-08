@@ -3,6 +3,10 @@
 
 *Install AWS CLI:* [[Link]](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 
+### Environment setup
+To install the necessary dependencies (*alternatively use pip3*):
+>`pip install -r requirements. txt`
+
 ### Setup Boto3 User credentials
 
 #### Create Boto3 User
@@ -21,6 +25,6 @@
 
 #### Configure and login to IAM User (on local machine)
 >`aws configure`         Creates a [default] profile
-- Type in the above into local CLI environment (e.g. Terminal)
+- Type the above into local CLI environment (e.g. Terminal)
 - Enter in Access Key credentials
 - Default region name: us-east-1    *(doesn't matter too much)*
