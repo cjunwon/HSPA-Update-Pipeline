@@ -3,23 +3,54 @@ import boto3
 import numpy as np
 from config_functions import *
 
-s3 = start_session()
-# s3.download_file('BUCKET_NAME', 'OBJECT_NAME', 'FILE_NAME')
-print(folder_exists_and_not_empty('adrian-sri-test-bucket','Hillside-Data/WL-Designationn/'))
-# Read current ver. of data from S3
-# inventory_data_extracted=gpd.read_file(r"C:/Users/s-mal/Desktop/Python Software/NavigateLA/hillside_inventory_LA_FINAL/hillside_inventory_LA.geojson")
-# inventory_data_extracted=gpd.read_file(r"C:/Users/s-mal/Desktop/Python Software/NavigateLA/hillside_inventory_LA_FINAL/hillside_inventory_LA.geojson")
+def main():
+    s3_client = start_session()
 
-# centerline=gpd.read_file(r"C:/Users/s-mal/Desktop/prepare_final_dataset/Streets_(Centerline).geojson")
+    # SRI bucket name
+    bucket = 'adrian-sri-test-bucket'
+    # Path to designated folder for data on S3
+    path = 'Hillside-Data/WL-Designation/'
+    file_name = 'StreetsLA_GeoHub_Street_Inventory.geojson'
+    file_2_name = 'Street Centerline.geojson'
+    object_name = "Width_and_Length.geojson"
+    object_2_name = "Streets_Centerline.geojson"
 
-# inventory_data_extracted["Street_Designation"]=None
+    initial_upload = False   # Set to True if first time uploading data to S3
 
 
-# for i in range(len(inventory_data_extracted)):
-#     print(i)
-#     ids=np.where(np.array(centerline["SECT_ID"],dtype=str)==str(inventory_data_extracted["SECT_ID"][i]))[0]
-#     if len(ids)!=0:
-#         j=ids[0]
-#         inventory_data_extracted["Street_Designation"][i]=centerline["Street_Designation"][j]
-   
-# inventory_data_extracted_designated=inventory_data_extracted.copy()
+    '''
+        Initial migration of local data to S3
+    '''
+
+
+    # Upload local copy file to S3
+
+    # Check if folder directory exists and not empty (i.e. path is correct)
+    if initial_upload:
+        file_upload(s3_client, file_name, bucket, path, object_name=object_name, verbose=True)
+        file_upload(s3_client, file_2_name, bucket, path, object_name=object_2_name, verbose=True)
+        return
+        
+
+    '''
+        Data Pipeline for updating Designation
+    '''
+
+
+    # Read current ver. of data from S3  
+
+    inventory_data_extracted=gpd.read_file(f"s3://{bucket}/{path}{object_name}")
+    centerline=gpd.read_file(f"s3://{bucket}/{path}{object_2_name}")
+    print("Data successfully read from S3")
+
+    inventory_data_extracted["Street_Designation"]=None
+
+    # Data manipulation goes here
+
+    # Upload updated data to S3
+    geo_upload(s3_client, inventory_data_extracted, bucket, path, object_name=object_name, verbose=True)
+    geo_upload(s3_client, centerline, bucket, path, object_name=object_2_name, verbose=True)
+    return
+
+if __name__ == "__main__":
+    main()
