@@ -28,3 +28,6 @@ To install the necessary dependencies (*alternatively use pip3*):
 - Type the above into local CLI environment (e.g. Terminal)
 - Enter in Access Key credentials
 - Default region name: us-east-1    *(doesn't matter too much)*
+
+Reference materials for Boto3 Python library stuff:
+https://boto3.amazonaws.com/v1/documentation/api/latest/guide/s3-examples.html
