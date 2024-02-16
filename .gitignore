@@ -1,4 +1,4 @@
-config.py;l/ 
+config.py
 
 # Ignore node_modules directory
 node_modules/
