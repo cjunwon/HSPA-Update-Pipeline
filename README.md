@@ -64,7 +64,8 @@ If you are working with an **ipynb** file, make sure the kernal is set to the pr
 
 ---
 
-# Amazon S3 & Boto3 Notes
+# Amazon S3 & Boto3 Setup
+
 ## AWS CLI
 
 *Install AWS CLI:* [[Link]](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
