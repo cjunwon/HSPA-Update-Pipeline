@@ -14,18 +14,19 @@ def start_session():
     s3_client = boto3.client('s3')
     return s3_client
 
-def download_file(s3_client, bucket, path, file_name):
+def download_file(s3_client, bucket, path, file_name, folder_to_save):
     # Download file from S3
-    s3_client.download_file(bucket, path + file_name, file_name)
+    s3_client.download_file(bucket, path + file_name, folder_to_save + file_name)
 
 s3_client = start_session()
 bucket = 'junwon-sri-test-bucket'
 path = 'Test-Folder/'
 file_name = 'lodes_version.txt'
-download_file(s3_client, bucket, path, file_name)
+folder_to_save = 'LODES Check Download/'
+download_file(s3_client, bucket, path, file_name, folder_to_save)
 
 # Get current version of LODES data
-with open('lodes_version.txt', 'r') as f:
+with open(folder_to_save + file_name, 'r') as f:
     current_LODES = f.read()
 
 file_name_base = "ca_od_main_JT00_"
@@ -42,7 +43,7 @@ def download_and_unzip(year, lodes_url_base, current_LODES=current_LODES):
             return False
         elif file_name_base + str(year) + ".csv" != current_LODES:
             print("The HSPA website is not up to date with the latest LEHD Origin-Destination Employment Statistics (LODES) for " + str(year) + ".")
-            print("The current version is: " + current_LODES)
+            print("The current HSPA version is: " + current_LODES)
             print("The latest available version is: " + file_name_base + str(year) + ".csv")
             print("To download, the LODES dataset for " + str(year) + ", press enter. To exit, press any other key.")
 
