@@ -2,6 +2,27 @@ import requests
 import time
 import gzip
 import shutil
+import boto3
+
+# Pull in Test-Folder/lodes_version.txt from S3 bucket junwon-sri-test-bucket assuming AWS CLI is configured
+
+def start_session():
+    # Start session with AWS credentials
+    # session = boto3.Session(profile_name="default")
+
+    # S3 where the data is stored
+    s3_client = boto3.client('s3')
+    return s3_client
+
+def download_file(s3_client, bucket, path, file_name):
+    # Download file from S3
+    s3_client.download_file(bucket, path + file_name, file_name)
+
+s3_client = start_session()
+bucket = 'junwon-sri-test-bucket'
+path = 'Test-Folder/'
+file_name = 'lodes_version.txt'
+download_file(s3_client, bucket, path, file_name)
 
 # Get current version of LODES data
 with open('lodes_version.txt', 'r') as f:
