@@ -8,6 +8,13 @@ geopandas = "*"
 numpy = "*"
 boto3 = "*"
 requests = "*"
+matplotlib = "*"
+networkx = "*"
+scipy = "*"
+pandas = "*"
+shapely = "*"
+rtree = "*"
+scikit-gstat = "*"
 
 [dev-packages]
 ipykernel = "*"
