@@ -1,13 +1,10 @@
 import subprocess
 import os
+import time
 
-# 00 - Package Installation
+# 00 - Required Packages & LODES Dataset Update
 
 '''
-
-This section installs the required packages for the script to run.
-If there are missing packages, the script will install them with pip3.
-You can change pip3 to other package managers like pipenv or conda.
 
 Before running this script, make sure you are in the 'Importance Update' directory.
 
@@ -26,17 +23,9 @@ required_packages = [
     'scikit-gstat'
 ]
 
-# def check_and_install_with_pip(package):
-#     try:
-#         subprocess.run(['pip3', 'show', package], check=True, stdout=subprocess.PIPE)
-#         print(f"{package} is already installed with pip3.")
-#     except subprocess.CalledProcessError:
-#         print(f"{package} is not installed with pip3. Installing...")
-#         subprocess.run(['pip3', 'install', package], check=True)
 
-# # Check and install required packages
-# for package in required_packages:
-#     check_and_install_with_pip(package)
+subprocess.run(['python', 'dataset_download/lodes_check_download.py'])
+
 
 #######################################################################################################################
 
@@ -65,20 +54,29 @@ if not os.path.isfile('graph_centrality_codes/nodes_edges_weighted.pickle'):
 subprocess.run(['python', '01_block_determination.py'])
 
 # 02 - Block Node Pairing
+
+# pull in file name as string from dataset_download/lodes_version.txt
+
+with open('dataset_download/lodes_version.txt', 'r') as f:
+    recent_lodes_version = f.read()
+
+
 '''
 Description: This script combines results from 01_block_determination.py with the Origin-Destination dataset to append job/worker quantity for each node.
 
 Input:
-    - lodes_od_data/ca_od_main_JT00_2020.csv
+    - lodes_od_data/ca_od_main_JT00_{yyyy} *recent_lodes_version*
     - intermediate_files/Node_Block.pkl
 
 Output:
     - intermediate_files/Origin_Destination_Node_Added.pkl
 
 '''
+
+
 # Check if input files are present
-if not os.path.isfile('lodes_od_data/ca_od_main_JT00_2020.csv'):
-    print('ca_od_main_JT00_2020.csv is missing. Please run the data download file to optain the latest the LODES dataset.')
+if not os.path.isfile('lodes_od_data/' + recent_lodes_version):
+    print(recent_lodes_version + ' is missing. Please run the data download file to optain the latest the LODES dataset.')
     exit()
 if not os.path.isfile('intermediate_files/Node_Block.pkl'):
     print('Node_Block.pkl is missing. The 01_block_determination.py script should have produced this file.')
@@ -134,7 +132,24 @@ if not os.path.isfile('intermediate_files/Shortest_Path_Results.pkl'):
 
 subprocess.run(['python', '04_path_usage.py'])
 
-# 05 - Kriging Update
+# 05 - LODES to UDF
+
+'''
+Description: This script updates UDF from S3 with LODES data.
+
+Input:
+    - intermediate_files/B_matrix_weighted_updated.pickle
+    - udf/hillside_inventory_LA_centrality_full_new_evacmidnorth_lodes.geojson
+
+Output:
+    - udf/hillside_inventory_LA_centrality_full_new_evacmidnorth_lodes.geojson
+
+'''
+
+
+
+
+# 06 - Kriging Update
 '''
 Description: This script updates missing road demand values using kriging.
 
@@ -150,4 +165,4 @@ if not os.path.isfile('udf/hillside_inventory_LA_centrality_full_new_evacmidnort
     print('hillside_inventory_LA_centrality_full_new_evacmidnorth_lodes.geojson is missing. Please contact SRILab for the geojson file and its dependencies.')
     exit()
 
-subprocess.run(['python', '05_kriging_update.py'])
+
