@@ -11,13 +11,12 @@ from scipy.spatial import KDTree
 url_data_la_city = 'https://data.lacity.org/api/geospatial/yjxu-2kqq?method=export&format=GeoJSON'
 
 s3_bucket = 'srilabgeodata'
-s3_key_main_db = 'hillside_inventory_LA_centrality_full_new_evacmidnorth_UPDATED_copy.geojson'
+s3_key_main_db = 'hillside_inventory_LA_centrality_full_new_evacmidnorth_UPDATED (1).geojson'
 s3_key_street_centerline = 'Streets_Centerline_For_URL.geojson'
 
 #Update the db's pci from data_lacity website
 def update_pci_data_lacity():
     s3 = boto3.client('s3')
-
     #Download data_la_city
     response = requests.get(url_data_la_city)
     if response.status_code == 200:
@@ -32,14 +31,14 @@ def update_pci_data_lacity():
         online_columns = ['sect_id', 'pci']
         local_columns = ['SECT_ID', 'pci']
 
-        merged_df = pd.merge(gdf_local[local_columns], gdf_online[online_columns], left_on='SECT_ID', right_on='sect_id', how='left')
-
+        merged_df = pd.merge(gdf_local[local_columns], gdf_online[online_columns].drop_duplicates(subset=['sect_id']), left_on='SECT_ID', right_on='sect_id', how='left')
+        print(gdf_local[local_columns])
+        print(merged_df)
         # Update 'pci' values only if they are -1
         gdf_local.loc[gdf_local['pci'] == -1, 'pci'] = merged_df.loc[gdf_local['pci'] == -1, 'pci_y'].astype('float64')
-
-        # gdf_local.to_file(url_local, driver='GeoJSON')
         updated_geojson = gdf_local.to_json()
         s3.put_object(Bucket=s3_bucket, Key=s3_key_main_db, Body=updated_geojson)
+        
 
     except s3.exceptions.NoSuchKey:
         print(f"No such key: {s3_key_main_db}")
@@ -50,19 +49,18 @@ def update_pci_data_lacity():
 #Update the db's pci from navigateLA website
 def update_pci_navigateLA():
     s3 = boto3.client('s3')
-    fail_c = 0
     def get_pci_value(url):
-        nonlocal fail_c
+        response = requests.get(url)
+        #BeautifulSoup scrape data using certain criteria on the website
+        soup = BeautifulSoup(response.content, 'html.parser')
+        pci_element = soup.find('th', string='Pavement Condition Index (PCI)')
         try:
-            response = requests.get(url)
-            #BeautifulSoup scrape data using certain criteria on the website
-            soup = BeautifulSoup(response.content, 'html.parser')
-            pci_element = soup.find('th', string='Pavement Condition Index (PCI)')
             pci_value = pci_element.find_next('td')
-            pci_value = int(pci_value.find_next('td').get_text())
-            return pci_value
-        except ValueError:
-            fail_c+=1
+            pci_value = str(pci_value.find_next('td').get_text()).strip()
+            return float(pci_value)
+        except (AttributeError, ValueError, TypeError):
+            return -1.0
+        
 
     try:
         obj1 = s3.get_object(Bucket=s3_bucket, Key=s3_key_main_db)
@@ -74,16 +72,24 @@ def update_pci_navigateLA():
         url_columns = ['SECT_ID', 'NLA_URL']
         local_columns = ['SECT_ID', 'pci']
 
-        merged_df = pd.merge(gdf_local[local_columns], gdf_url[url_columns], left_on='SECT_ID', right_on='SECT_ID', how='left')
+        gdf_url_df = gdf_url[url_columns].copy().drop_duplicates(subset=['SECT_ID'])
+        gdf_local_df = gdf_local[local_columns].copy()
 
-        gdf_local['pci'] = merged_df['NLA_URL'].apply(lambda url: get_pci_value('https://navigatela.lacity.org/' + url))
+        # Merge gdf_local_df with gdf_url_df on SECT_ID
+        merged_df = pd.merge(gdf_local_df, gdf_url_df, on='SECT_ID', how='left')
+        print(merged_df)
+        print("UPDATING PCI...")
+        # Update 'pci' value in gdf_local for the corresponding SECT_ID
+        gdf_local['pci'] = merged_df['NLA_URL'].apply(lambda url: get_pci_value('https://navigatela.lacity.org/' + str(url)))
+        print(gdf_local['pci'])
+       
 
         # Convert the updated GeoDataFrame to a GeoJSON string
         updated_geojson = gdf_local.to_json()
 
         # Upload the updated GeoJSON to the same S3 location
         s3.put_object(Bucket=s3_bucket, Key=s3_key_main_db, Body=updated_geojson)
-        print(f"Successfully updated and uploaded the GeoJSON to S3 with {fail_c} failures.")
+        print(f"Successfully updated and uploaded the GeoJSON to S3")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -110,7 +116,8 @@ def update_missing_point():
     kmax=0
 
     for i in range(len(pcis_prefinal)):
-        if pcis_prefinal[i]==-1:
+
+        if pcis_prefinal[i] == -1 or pcis_prefinal[i] == -1.0:
             point=centroids[i,:]
             k=6
             while True:
