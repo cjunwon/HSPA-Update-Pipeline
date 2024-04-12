@@ -33,7 +33,7 @@ def update_pci_data_lacity():
 
         online_columns = ['sect_id', 'pci']
         local_columns = ['SECT_ID', 'pci']
-        before_update_count = gdf_local['pci'].eq(-1).sum()
+        # before_update_count = gdf_local['pci'].eq(-1).sum()
         merged_df = pd.merge(gdf_local[local_columns], gdf_online[online_columns].drop_duplicates(subset=['sect_id']), left_on='SECT_ID', right_on='sect_id', how='left')
         print(gdf_local[local_columns])
         print(merged_df)
@@ -110,7 +110,7 @@ def update_pci_navigateLA():
 #Kriging
 def update_missing_point():
     s3 = boto3.client('s3')
-    count = 0
+    # count = 0
     obj = s3.get_object(Bucket=s3_bucket, Key=s3_key_main_db)
     df = gpd.read_file(io.BytesIO(obj['Body'].read()))
     print(df)
@@ -151,7 +151,7 @@ def update_missing_point():
 
             pcinew=sum(pcis_new*(1/dsts_new))/dstsum
             pcis_prefinal_new[i]=pcinew
-            count += 1
+            # count += 1
         elif pcis_prefinal[i] == -1.0 :
             point=centroids[i,:]
             k=6
@@ -174,7 +174,7 @@ def update_missing_point():
             
             pcinew=sum(pcis_new*(1/dsts_new))/dstsum
             pcis_prefinal_new[i]=pcinew
-            count += 1
+            # count += 1
     df["pci"] = pcis_prefinal_new
 
     # Convert the updated GeoDataFrame to a GeoJSON string
